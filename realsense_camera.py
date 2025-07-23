@@ -22,6 +22,9 @@ class RealSenseCamera:
             depth_sensor = self.profile.get_device().first_depth_sensor()
             self.depth_scale = depth_sensor.get_depth_scale()
             self.intrinsics = self.profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+            # Initialize RealSense filters
+            self.spatial = rs.spatial_filter()
+            self.temporal = rs.temporal_filter()
         except Exception as e:
             raise RuntimeError(f"Failed to start RealSense pipeline: {e}")
         return self
@@ -37,6 +40,9 @@ class RealSenseCamera:
             depth_frame = frames.get_depth_frame()
             if not color_frame or not depth_frame:
                 return None, None
+            # Apply spatial and temporal filters to depth frame
+            depth_frame = self.spatial.process(depth_frame)
+            depth_frame = self.temporal.process(depth_frame)
             color_image = np.asanyarray(color_frame.get_data())
             depth_image = np.asanyarray(depth_frame.get_data())
             return color_image, depth_image
